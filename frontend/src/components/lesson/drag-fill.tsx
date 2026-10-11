@@ -2,7 +2,9 @@
 
 import { useEffect, useEffectEvent, useRef, useState } from "react";
 import { playDrop, playPickup, playReturn } from "@/lib/sounds";
-import type { FillQuestion } from "./types";
+import type { AnswerSpec } from "@/lib/math/schema";
+
+type FillQuestion = Pick<Extract<AnswerSpec, { type: "fill" }>, "lines" | "tiles">;
 
 export type SlotMark = "right" | "wrong" | null;
 

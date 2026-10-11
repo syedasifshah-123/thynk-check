@@ -1,7 +1,9 @@
 "use client";
 
 import { playShade } from "@/lib/sounds";
-import type { ShadeQuestion } from "./types";
+import type { AnswerSpec } from "@/lib/math/schema";
+
+type ShadeQuestion = Pick<Extract<AnswerSpec, { type: "shade" }>, "rows" | "cols">;
 
 export type ShadeMark = "right" | "wrong" | null;
 

@@ -6,58 +6,60 @@ import { LEARN_ITEMS } from "@/components/dashboard/nav-items";
 import { MathCourseCard } from "@/components/math/course-card";
 import { Mascot } from "@/components/mascot";
 import { toast } from "@/components/toast/toast-store";
-import { lessonHref, mathProgress } from "@/lib/math/curriculum";
-import { xpToday } from "@/lib/progress";
+import type { Session } from "@/lib/fake-auth";
+import { BRANCHES, levelHref } from "@/lib/math/curriculum";
+import { useMathProgress } from "@/lib/math/progress-store";
+import { nextLevel } from "@/lib/math/session";
+import { xpToday, type Progress } from "@/lib/progress";
 
 const DAILY_GOAL_XP = 50;
 const COMING_SOON = ["brain", "games", "iq"];
 
 // Logged-in home dashboard: greeting, the Math course, daily goal.
 export function HomeView() {
+  return <AuthedPage active="home">{({ session, progress }) => <HomeContent session={session} progress={progress} />}</AuthedPage>;
+}
+
+function HomeContent({ session, progress }: { session: Session; progress: Progress }) {
+  const firstName = session.name.split(" ")[0];
+  const data = useMathProgress(session.email);
+  const next = data ? nextLevel(BRANCHES, data) : undefined;
+
   return (
-    <AuthedPage active="home">
-      {({ session, progress }) => {
-        const firstName = session.name.split(" ")[0];
-        const { next } = mathProgress(progress);
+    <main className="mx-auto w-full max-w-6xl flex-1 px-4 pb-16 pt-5 sm:px-8 sm:pt-10">
+      {/* Greeting */}
+      <div className="flex flex-wrap items-center justify-between gap-4 sm:gap-5">
+        <div className="flex items-center gap-3 sm:gap-4">
+          <Mascot className="pointer-events-none size-12 shrink-0 select-none sm:size-20" />
+          <div>
+            <p className="text-sm text-muted sm:text-base">Welcome back, {firstName}</p>
+            <h1 className="font-headline text-[1.75rem] leading-none tracking-[-0.02em] sm:text-5xl">Ready to thynk?</h1>
+          </div>
+        </div>
+        {next ? (
+          <Link
+            href={levelHref(next.level)}
+            style={{ "--accent": next.branch.color.main, "--accent-shadow": next.branch.color.shadow, "--accent-ink": next.branch.color.ink } as React.CSSProperties}
+            className="btn btn-accent h-12 w-full px-6 text-sm sm:w-auto sm:text-base"
+          >
+            {data?.levels[next.level.id] ? "Continue" : "Start"}: {next.branch.title} {next.level.number}
+          </Link>
+        ) : (
+          <Link href="/math" className="btn btn-primary h-12 w-full px-6 text-sm sm:w-auto sm:text-base">
+            Explore Math
+          </Link>
+        )}
+      </div>
 
-        return (
-          <main className="mx-auto w-full max-w-6xl flex-1 px-4 pb-16 pt-5 sm:px-8 sm:pt-10">
-            {/* Greeting */}
-            <div className="flex flex-wrap items-center justify-between gap-4 sm:gap-5">
-              <div className="flex items-center gap-3 sm:gap-4">
-                <Mascot className="pointer-events-none size-12 shrink-0 select-none sm:size-20" />
-                <div>
-                  <p className="text-sm text-muted sm:text-base">Welcome back, {firstName}</p>
-                  <h1 className="font-headline text-[1.75rem] leading-none tracking-[-0.02em] sm:text-5xl">Ready to thynk?</h1>
-                </div>
-              </div>
-              {next ? (
-                <Link
-                  href={lessonHref(next.section.id, next.lesson.id)}
-                  style={{ "--accent": next.section.color.main, "--accent-shadow": next.section.color.shadow, "--accent-ink": next.section.color.ink } as React.CSSProperties}
-                  className="btn btn-accent h-12 w-full px-6 text-sm sm:w-auto sm:text-base"
-                >
-                  Continue: {next.lesson.title}
-                </Link>
-              ) : (
-                <Link href="/math" className="btn btn-primary h-12 w-full px-6 text-sm sm:w-auto sm:text-base">
-                  Explore Math
-                </Link>
-              )}
-            </div>
+      <div className="mt-8 sm:mt-10">
+        {data && <MathCourseCard data={data} />}
+      </div>
 
-            <div className="mt-8 sm:mt-10">
-              <MathCourseCard progress={progress} />
-            </div>
-
-            <div className="mt-8 grid items-start gap-5 sm:mt-10 sm:grid-cols-2 sm:gap-6">
-              <DailyGoal xp={xpToday(progress)} />
-              <ComingSoon />
-            </div>
-          </main>
-        );
-      }}
-    </AuthedPage>
+      <div className="mt-8 grid items-start gap-5 sm:mt-10 sm:grid-cols-2 sm:gap-6">
+        <DailyGoal xp={xpToday(progress)} />
+        <ComingSoon />
+      </div>
+    </main>
   );
 }
 

@@ -1,8 +1,8 @@
-// Diagrams for multiple-choice questions. Drawn in SVG and tinted with the section accent
-// (--accent / --accent-shadow, set by the lesson player), so each section has its own look.
+// Diagrams shown with exercises, intros and worked examples. Drawn in SVG / CSS and tinted with the
+// branch accent (--accent / --accent-shadow, set by the level player), so each branch has its own look.
 
+import type { Visual as VisualSpec } from "@/lib/math/schema";
 import { Scale } from "./scale";
-import type { Visual as VisualSpec } from "./types";
 
 const fmt = (n: number) => (n < 0 ? `−${-n}` : `${n}`);
 
@@ -22,6 +22,14 @@ export function Visual({ visual }: { visual: VisualSpec }) {
       return <Growing counts={visual.counts} />;
     case "thermometer":
       return <Thermometer {...visual} />;
+    case "fractionBars":
+      return <FractionBars bars={visual.bars} />;
+    case "array":
+      return <DotArray rows={visual.rows} cols={visual.cols} />;
+    case "percentGrid":
+      return <PercentGrid shaded={visual.shaded} />;
+    case "ratio":
+      return <RatioStrip groups={visual.groups} />;
   }
 }
 
@@ -293,5 +301,99 @@ function Thermometer({ value, min, max }: { value: number; min: number; max: num
       {/* Zero line across the tube */}
       <line x1={50} y1={y(0)} x2={58} y2={y(0)} stroke="var(--foreground)" strokeWidth="2.5" strokeLinecap="round" />
     </svg>
+  );
+}
+
+/* ───────────── Fraction bars ───────────── */
+
+function FractionBars({ bars }: { bars: { parts: number; shaded: number; label?: string }[] }) {
+  const labelled = bars.some((b) => b.label);
+  return (
+    <div className="mx-auto flex w-full max-w-[520px] flex-col gap-3">
+      {bars.map((bar, i) => (
+        <div key={i} className="flex items-center gap-3">
+          {labelled && <span className="w-12 shrink-0 text-right font-cofo text-base font-bold sm:text-lg">{bar.label}</span>}
+          <div className="flex h-11 flex-1 overflow-hidden rounded-xl border-2 border-foreground/70 shadow-[0_3px_0_var(--border-strong)] sm:h-12">
+            {Array.from({ length: bar.parts }, (_, j) => (
+              <span
+                key={j}
+                className={`flex-1 ${j > 0 ? "border-l-2 border-foreground/70" : ""} ${j < bar.shaded ? "bg-[var(--accent)]" : "bg-surface"}`}
+              />
+            ))}
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+/* ───────────── Array of dots (rows × columns) ───────────── */
+
+function DotArray({ rows, cols }: { rows: number; cols: number }) {
+  const S = 34;
+  const R = 11;
+  return (
+    <div className="mx-auto w-fit max-w-full rounded-2xl border-2 border-border bg-surface p-3 shadow-[0_3px_0_var(--border)]">
+      <svg viewBox={`0 0 ${cols * S} ${rows * S}`} width={cols * S} height={rows * S} className="h-auto max-w-full" aria-hidden="true">
+        {Array.from({ length: rows * cols }, (_, i) => {
+          const cx = (i % cols) * S + S / 2;
+          const cy = Math.floor(i / cols) * S + S / 2;
+          return (
+            <g key={i} className="dot-pop" style={{ animationDelay: `${i * 20}ms` }}>
+              <circle cx={cx} cy={cy + 2} r={R} fill="var(--accent-shadow)" />
+              <circle cx={cx} cy={cy} r={R} fill="var(--accent)" />
+            </g>
+          );
+        })}
+      </svg>
+    </div>
+  );
+}
+
+/* ───────────── Hundred grid ───────────── */
+
+function PercentGrid({ shaded }: { shaded: number }) {
+  const S = 22;
+  return (
+    <div className="mx-auto w-fit rounded-2xl border-2 border-border bg-surface p-3 shadow-[0_3px_0_var(--border)]">
+      <svg viewBox={`0 0 ${10 * S} ${10 * S}`} className="size-[200px] sm:size-[230px]" aria-hidden="true">
+        {Array.from({ length: 100 }, (_, i) => (
+          <rect
+            key={i}
+            x={(i % 10) * S + 1.5}
+            y={Math.floor(i / 10) * S + 1.5}
+            width={S - 3}
+            height={S - 3}
+            rx="3"
+            fill={i < shaded ? "var(--accent)" : "var(--background)"}
+            stroke={i < shaded ? "var(--accent-shadow)" : "var(--border-strong)"}
+            strokeWidth="1.5"
+          />
+        ))}
+      </svg>
+    </div>
+  );
+}
+
+/* ───────────── Ratio counters ───────────── */
+
+function RatioStrip({ groups }: { groups: { label: string; count: number; color: string }[] }) {
+  return (
+    <div className="mx-auto flex w-fit max-w-full flex-col gap-2.5 rounded-2xl border-2 border-border bg-surface p-4 shadow-[0_3px_0_var(--border)]">
+      {groups.map((group) => (
+        <div key={group.label} className="flex items-center gap-3">
+          <span className="w-16 shrink-0 font-cofo text-sm font-bold text-muted sm:text-base">{group.label}</span>
+          <div className="flex flex-wrap gap-1.5">
+            {Array.from({ length: group.count }, (_, i) => (
+              <span
+                key={i}
+                className="dot-pop size-7 rounded-full sm:size-8"
+                style={{ background: group.color, boxShadow: "inset 0 -3px 0 rgba(0,0,0,0.22)", animationDelay: `${i * 30}ms` }}
+              />
+            ))}
+          </div>
+        </div>
+      ))}
+    </div>
   );
 }
