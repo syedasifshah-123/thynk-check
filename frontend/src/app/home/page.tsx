@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { HomeView } from "./home-view";
 
 export const metadata: Metadata = {
-  title: "Puzzle · Thynk",
+  title: "Home · Thynk",
 };
 
 export default function HomePage() {

@@ -5,7 +5,7 @@ import { useEffect, useEffectEvent, useRef, useState } from "react";
 import { Mascot, type MascotMood } from "@/components/mascot";
 import { isMuted, playComplete, playCorrect, playWrong, setMuted } from "@/lib/sounds";
 import { DragFill, type SlotMark } from "./drag-fill";
-import { QUESTIONS, type Question } from "./questions";
+import type { Lesson, Question } from "./lessons";
 import { Scale } from "./scale";
 
 type Status = "idle" | "correct" | "wrong";
@@ -18,12 +18,23 @@ const WRONG_LINES = ["Not quite. Try again!", "Hmm, not that one.", "Oops! Give 
 const emptySlots = (q: Question) => (q.kind === "fill" ? q.answer.map(() => null) : []);
 
 // Brilliant-style lesson: question → Check → mascot reacts (happy + chime / grumpy + bwomp) → Continue.
-export function LessonPlayer({ onExitHref = "/" }: { onExitHref?: string }) {
+type LessonPlayerProps = {
+  lesson: Lesson;
+  /** Where the X button and "Back to section" go. */
+  exitHref: string;
+  /** Next lesson in the section, offered on the finish screen. */
+  nextLesson?: { href: string; title: string };
+  /** Called once when the lesson is finished, with the XP earned. */
+  onComplete?: (xp: number) => void;
+};
+
+export function LessonPlayer({ lesson, exitHref, nextLesson, onComplete }: LessonPlayerProps) {
+  const QUESTIONS = lesson.questions;
   const [index, setIndex] = useState(0);
   const [status, setStatus] = useState<Status>("idle");
   const [choice, setChoice] = useState<number | null>(null);
   const [wrongChoices, setWrongChoices] = useState<number[]>([]);
-  const [slots, setSlots] = useState<(number | null)[]>(() => emptySlots(QUESTIONS[0]));
+  const [slots, setSlots] = useState<(number | null)[]>(() => emptySlots(lesson.questions[0]));
   const [slotMarks, setSlotMarks] = useState<SlotMark[] | null>(null);
   const [attempts, setAttempts] = useState(0);
   const [xp, setXp] = useState(0);
@@ -34,7 +45,9 @@ export function LessonPlayer({ onExitHref = "/" }: { onExitHref?: string }) {
   const [finished, setFinished] = useState(false);
   const [reaction, setReaction] = useState(0);
   const [muted, setMutedState] = useState(isMuted);
-  const cardRef = useRef<HTMLDivElement>(null);
+  // Shake target for wrong answers. Deliberately NOT the card: a transform on the card would
+  // re-anchor the mobile bottom sheet (position: fixed) to the card and make it jump up.
+  const questionRef = useRef<HTMLDivElement>(null);
 
   const q = QUESTIONS[index];
   const ready = q.kind === "choice" ? choice !== null : slots.every((s) => s !== null);
@@ -74,7 +87,7 @@ export function LessonPlayer({ onExitHref = "/" }: { onExitHref?: string }) {
       setStatus("wrong");
       if (q.kind === "choice" && choice !== null) setWrongChoices((w) => [...w, choice]);
       if (q.kind === "fill") setSlotMarks(slots.map((tile, i) => (tile !== null && q.tiles[tile] === q.answer[i] ? "right" : "wrong")));
-      cardRef.current?.animate(
+      questionRef.current?.animate(
         [0, -8, 8, -6, 6, -3, 0].map((x) => ({ transform: `translateX(${x}px)` })),
         { duration: 420, easing: "ease-out" },
       );
@@ -98,6 +111,7 @@ export function LessonPlayer({ onExitHref = "/" }: { onExitHref?: string }) {
       setFinished(true);
       setReaction((r) => r + 1);
       playComplete();
+      onComplete?.(xp);
       return;
     }
     setIndex(index + 1);
@@ -156,7 +170,7 @@ export function LessonPlayer({ onExitHref = "/" }: { onExitHref?: string }) {
       {/* Top bar */}
       <header className="flex h-16 shrink-0 items-center gap-3 px-3 sm:gap-6 sm:px-8">
         <Link
-          href={onExitHref}
+          href={exitHref}
           aria-label="Exit lesson"
           className="grid size-10 shrink-0 place-items-center rounded-full text-muted transition-colors hover:bg-foreground/5 hover:text-foreground"
         >
@@ -205,16 +219,24 @@ export function LessonPlayer({ onExitHref = "/" }: { onExitHref?: string }) {
 
       <main className="flex flex-1 flex-col pb-44 md:px-8 md:pb-6">
         <div
-          ref={cardRef}
           className={`relative mx-auto flex w-full max-w-6xl flex-1 flex-col transition-colors duration-300 md:rounded-[28px] md:border-2 ${
             status === "correct" || finished ? "md:border-primary" : status === "wrong" ? "md:border-amber-400" : "md:border-border"
           }`}
         >
           {finished ? (
-            <Finished xp={xp} firstTry={firstTry} total={QUESTIONS.length} reaction={reaction} onRestart={restart} exitHref={onExitHref} />
+            <Finished
+              lessonTitle={lesson.title}
+              xp={xp}
+              firstTry={firstTry}
+              total={QUESTIONS.length}
+              reaction={reaction}
+              onRestart={restart}
+              exitHref={exitHref}
+              nextLesson={nextLesson}
+            />
           ) : (
             <>
-              <div className="flex flex-1 flex-col items-center justify-center px-5 py-6 md:px-10">
+              <div ref={questionRef} className="flex flex-1 flex-col items-center justify-center px-5 py-6 md:px-10">
                 <div key={q.id} className="question-in w-full max-w-[640px]">
                   {q.intro && <p className="mb-5 font-cofo text-lg font-medium sm:text-xl">{q.intro}</p>}
                   <h1 className="mb-8 font-cofo text-lg font-bold sm:text-xl">{q.prompt}</h1>
@@ -334,26 +356,22 @@ function BottomBar({
   const secondaryLabel = status === "correct" ? "Why?" : "Get help";
 
   return (
-    // Mobile: a sheet fixed to the bottom that turns green/amber. Desktop: a row inside the card.
+    // Mobile: a sheet fixed to the bottom that turns green/amber with a colored top border.
+    // Desktop: a plain row inside the card.
     <div
-      className={`fixed inset-x-0 bottom-0 z-20 rounded-t-[28px] px-4 pb-[max(1rem,env(safe-area-inset-bottom))] pt-4 transition-colors duration-300 md:static md:rounded-none md:bg-transparent md:px-8 md:pb-6 md:pt-2 ${
+      className={`fixed inset-x-0 bottom-0 z-20 rounded-t-[28px] px-4 pb-[max(1rem,env(safe-area-inset-bottom))] pt-4 transition-colors duration-300 md:static md:rounded-none md:border-0 md:bg-transparent md:px-8 md:pb-6 md:pt-2 ${
         status === "correct"
-          ? "bg-[color-mix(in_srgb,var(--primary)_18%,var(--background))]"
+          ? "border-t-2 border-primary bg-[color-mix(in_srgb,var(--primary)_18%,var(--background))]"
           : status === "wrong"
-            ? "bg-[color-mix(in_srgb,#f5b301_18%,var(--background))]"
-            : "border-t border-border bg-background md:border-0"
+            ? "border-t-2 border-amber-400 bg-[color-mix(in_srgb,#f5b301_18%,var(--background))]"
+            : "border-t border-border bg-background"
       }`}
     >
-      {status !== "idle" && (
+      {/* Success gets a headline row on mobile. Wrong answers keep the sheet the same height as idle. */}
+      {status === "correct" && (
         <div className="question-in mb-3 flex items-center justify-between gap-3 md:hidden">
           <p className="font-cofo text-xl font-bold">
-            {status === "correct" ? (
-              <>
-                {line} <span className="ml-1 text-sm text-primary">+{gained} XP</span>
-              </>
-            ) : (
-              <span className="text-amber-500">{line}</span>
-            )}
+            {line} <span className="ml-1 text-sm text-primary">+{gained} XP</span>
           </p>
           <button type="button" onClick={onSecondary} className="shrink-0 rounded-full bg-foreground/10 px-4 py-2 font-cofo text-sm font-bold">
             {secondaryLabel}
@@ -382,7 +400,11 @@ function BottomBar({
 
         <div className="flex flex-1 gap-3 md:w-full md:max-w-[460px] md:flex-none">
           {status !== "idle" && (
-            <button type="button" onClick={onSecondary} className="btn btn-secondary hidden h-14 px-6 text-lg md:inline-flex">
+            <button
+              type="button"
+              onClick={onSecondary}
+              className={`btn btn-secondary h-14 px-4 text-base md:px-6 md:text-lg ${status === "correct" ? "max-md:hidden" : ""}`}
+            >
               {secondaryLabel}
             </button>
           )}
@@ -403,19 +425,23 @@ function BottomBar({
 }
 
 function Finished({
+  lessonTitle,
   xp,
   firstTry,
   total,
   reaction,
   onRestart,
   exitHref,
+  nextLesson,
 }: {
+  lessonTitle: string;
   xp: number;
   firstTry: number;
   total: number;
   reaction: number;
   onRestart: () => void;
   exitHref: string;
+  nextLesson?: { href: string; title: string };
 }) {
   return (
     <div className="question-in flex flex-1 flex-col items-center justify-center px-5 py-10 text-center">
@@ -423,8 +449,8 @@ function Finished({
         <Mascot key={reaction} mood="happy" className="size-28 sm:size-32" />
         <Confetti />
       </div>
-      <h1 className="mt-6 font-headline text-4xl tracking-[-0.02em] sm:text-5xl">Puzzle complete!</h1>
-      <p className="mt-2 text-muted">Your brain just got a little sharper.</p>
+      <h1 className="mt-6 font-headline text-4xl tracking-[-0.02em] sm:text-5xl">Lesson complete!</h1>
+      <p className="mt-2 text-muted">You finished {lessonTitle}. Your brain just got a little sharper.</p>
 
       <div className="mt-8 grid w-full max-w-sm grid-cols-2 gap-3">
         <Stat label="XP earned" value={`${xp}`} accent="text-primary" />
@@ -432,12 +458,23 @@ function Finished({
       </div>
 
       <div className="mt-8 flex w-full max-w-sm flex-col gap-3">
-        <button type="button" onClick={onRestart} className="btn btn-primary h-14 w-full text-lg">
+        {nextLesson ? (
+          <Link href={nextLesson.href} className="btn btn-primary h-14 w-full text-lg">
+            Next: {nextLesson.title}
+          </Link>
+        ) : (
+          <Link href={exitHref} className="btn btn-primary h-14 w-full text-lg">
+            Back to section
+          </Link>
+        )}
+        <button type="button" onClick={onRestart} className="btn btn-secondary h-14 w-full text-lg">
           Play again
         </button>
-        <Link href={exitHref} className="btn btn-secondary h-14 w-full text-lg">
-          Back to start
-        </Link>
+        {nextLesson && (
+          <Link href={exitHref} className="mt-1 font-cofo font-bold text-muted hover:text-foreground">
+            Back to section
+          </Link>
+        )}
       </div>
     </div>
   );

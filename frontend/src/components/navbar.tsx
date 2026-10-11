@@ -2,8 +2,7 @@ import Link from "next/link";
 import { Mascot } from "./mascot";
 import { ThemeToggle } from "./theme-toggle";
 
-/** `actions` replaces the default "Sign in" button (e.g. a Log out button on /home). */
-export function Navbar({ actions }: { actions?: React.ReactNode }) {
+export function Navbar() {
   return (
     <header className="px-4 pt-6 sm:px-8">
       <nav className="mx-auto flex h-[60px] max-w-7xl items-center justify-between rounded-full border border-border bg-surface pl-7 pr-2.5 sm:pl-8">
@@ -13,12 +12,10 @@ export function Navbar({ actions }: { actions?: React.ReactNode }) {
           <Mascot className="pointer-events-none absolute -top-[0.42em] left-full -ml-[0.12em] hidden size-[0.72em] rotate-12 select-none sm:block" />
         </Link>
         <div className="flex items-center gap-2.5">
-          <ThemeToggle />
-          {actions ?? (
-            <Link href="/auth/login" className="btn btn-secondary btn-sm h-10 px-5 text-base">
-              Sign in
-            </Link>
-          )}
+          <ThemeToggle className="size-10 max-sm:hidden" />
+          <Link href="/auth/login" className="btn btn-secondary btn-sm h-10 px-5 text-base">
+            Sign in
+          </Link>
         </div>
       </nav>
     </header>

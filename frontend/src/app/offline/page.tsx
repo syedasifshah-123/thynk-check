@@ -9,6 +9,8 @@ export const metadata: Metadata = {
 export default function OfflinePage() {
   return (
     <AuthShell title="You're offline" subtitle="Your brain can rest for a sec. Reconnect and we'll pick up where you left off.">
+      {/* A full page load on purpose: retry the network instead of a client-side navigation */}
+      {/* eslint-disable-next-line @next/next/no-html-link-for-pages */}
       <a href="/home" className="btn btn-primary mt-8 h-[52px] w-full text-lg">
         Try again
       </a>

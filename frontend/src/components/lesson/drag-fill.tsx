@@ -2,7 +2,7 @@
 
 import { useEffect, useEffectEvent, useRef, useState } from "react";
 import { playTick } from "@/lib/sounds";
-import type { FillQuestion } from "./questions";
+import type { FillQuestion } from "./lessons";
 
 export type SlotMark = "right" | "wrong" | null;
 
@@ -159,10 +159,13 @@ export function DragFill({ question, slots, onChange, marks, locked }: DragFillP
                   </span>
                 );
               }
-              if (token === "x") {
+              const term = /^(\d*)([a-z])$/.exec(token);
+              if (term) {
+                // Variable term like "x" or "3s": coefficient + highlighted letter
                 return (
-                  <span key={j} className="rounded-md bg-sky-500/15 px-1.5 text-sky-700 dark:text-sky-300">
-                    x
+                  <span key={j} className="inline-flex items-center gap-0.5">
+                    {term[1]}
+                    <span className="rounded-md bg-sky-500/15 px-1.5 text-sky-700 dark:text-sky-300">{term[2]}</span>
                   </span>
                 );
               }

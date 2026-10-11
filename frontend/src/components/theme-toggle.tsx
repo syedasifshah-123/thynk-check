@@ -1,6 +1,7 @@
 "use client";
 
-export function ThemeToggle() {
+/** `className` sets the size too (default size-10), so callers can make it smaller. */
+export function ThemeToggle({ className = "size-10" }: { className?: string }) {
   function toggle() {
     const root = document.documentElement;
     const next = root.getAttribute("data-theme") === "dark" ? "light" : "dark";
@@ -16,7 +17,7 @@ export function ThemeToggle() {
       type="button"
       onClick={toggle}
       aria-label="Toggle light and dark theme"
-      className="btn btn-secondary btn-sm size-10 max-sm:hidden"
+      className={`btn btn-secondary btn-sm ${className}`}
     >
       {/* Moon — shown in light mode */}
       <svg className="size-5 dark:hidden" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
