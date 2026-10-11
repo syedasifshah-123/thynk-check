@@ -16,7 +16,7 @@ export function ThemeToggle() {
       type="button"
       onClick={toggle}
       aria-label="Toggle light and dark theme"
-      className="btn btn-secondary btn-sm size-10"
+      className="btn btn-secondary btn-sm size-10 max-sm:hidden"
     >
       {/* Moon — shown in light mode */}
       <svg className="size-5 dark:hidden" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">

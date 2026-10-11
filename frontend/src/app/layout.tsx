@@ -1,5 +1,6 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import localFont from "next/font/local";
+import { ServiceWorkerRegister } from "@/components/service-worker-register";
 import { Toaster } from "@/components/toast/toaster";
 import "./globals.css";
 
@@ -32,10 +33,26 @@ const diatype = localFont({
   display: "swap",
 });
 
+// Favicon / app icons come from the file conventions in this folder:
+// favicon.ico, icon.png, apple-icon.png, and manifest.ts for the installable PWA.
 export const metadata: Metadata = {
   title: "Thynk",
   description: "Train your brain with bite-sized puzzles, logic and math challenges.",
-  icons: { icon: "/favicon.svg" },
+  applicationName: "Thynk",
+  appleWebApp: {
+    capable: true,
+    title: "Thynk",
+    statusBarStyle: "black-translucent",
+  },
+  formatDetection: { telephone: false },
+};
+
+export const viewport: Viewport = {
+  themeColor: [
+    { media: "(prefers-color-scheme: light)", color: "#f4f3f0" },
+    { media: "(prefers-color-scheme: dark)", color: "#0f1110" },
+  ],
+  viewportFit: "cover",
 };
 
 // Runs before first paint: saved choice → otherwise system preference.
@@ -56,6 +73,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
         <div className="bg-grid" aria-hidden="true" />
         {children}
         <Toaster />
+        <ServiceWorkerRegister />
       </body>
     </html>
   );

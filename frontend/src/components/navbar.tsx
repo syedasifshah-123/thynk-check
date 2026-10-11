@@ -9,8 +9,8 @@ export function Navbar({ actions }: { actions?: React.ReactNode }) {
       <nav className="mx-auto flex h-[60px] max-w-7xl items-center justify-between rounded-full border border-border bg-surface pl-7 pr-2.5 sm:pl-8">
         <Link href="/" className="relative font-headline text-[1.875rem] leading-none tracking-[-0.02em]">
           Thynk
-          {/* Tiny mascot perched above the "k" */}
-          <Mascot className="pointer-events-none absolute -top-[0.42em] left-full -ml-[0.12em] size-[0.72em] rotate-12 select-none" />
+          {/* Tiny mascot perched above the "k" (desktop/tablet only) */}
+          <Mascot className="pointer-events-none absolute -top-[0.42em] left-full -ml-[0.12em] hidden size-[0.72em] rotate-12 select-none sm:block" />
         </Link>
         <div className="flex items-center gap-2.5">
           <ThemeToggle />
