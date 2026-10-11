@@ -4,7 +4,17 @@ import { useId } from "react";
 // The bumps form one clipPath, so gradients and shine fill the cloud as a single seamless shape.
 // Each instance gets its own ids: url(#id) resolves to the first match in the document, so shared
 // ids would break every mascot whenever the first one is hidden (e.g. the navbar one on mobile).
-export function Mascot({ className = "" }: { className?: string }) {
+export type MascotMood = "idle" | "happy" | "sad";
+
+const MOUTHS = {
+  idle: "M84 128 Q102 132 120 126 Q117 152 102 152 Q87 152 84 128 Z",
+  happy: "M78 124 Q102 132 126 122 Q122 162 102 162 Q82 162 78 124 Z",
+};
+
+// `mood` swaps the face and plays a one-off reaction (celebrate jump / grumpy shake) instead of
+// the idle bounce. Remount with a new `key` to replay the reaction.
+export function Mascot({ className = "", mood = "idle" }: { className?: string; mood?: MascotMood }) {
+  const mouthPath = mood === "happy" ? MOUTHS.happy : MOUTHS.idle;
   const uid = `mascot${useId().replace(/[^a-zA-Z0-9_-]/g, "")}`;
   const id = {
     body: `${uid}-body`,
@@ -15,7 +25,7 @@ export function Mascot({ className = "" }: { className?: string }) {
   };
 
   return (
-    <svg viewBox="0 0 200 200" className={className} aria-hidden="true" overflow="visible">
+    <svg viewBox="0 0 200 200" className={`${className} mascot--${mood}`} aria-hidden="true" overflow="visible">
       <defs>
         <linearGradient id={id.body} x1="160" y1="30" x2="50" y2="190" gradientUnits="userSpaceOnUse">
           <stop offset="0" stopColor="#b6f75e" />
@@ -43,7 +53,7 @@ export function Mascot({ className = "" }: { className?: string }) {
           <circle cx="140" cy="156" r="33" />
         </clipPath>
         <clipPath id={id.mouth}>
-          <path d="M84 128 Q102 132 120 126 Q117 152 102 152 Q87 152 84 128 Z" />
+          <path d={mouthPath} />
         </clipPath>
       </defs>
 
@@ -54,39 +64,71 @@ export function Mascot({ className = "" }: { className?: string }) {
             <rect width="200" height="200" fill={`url(#${id.body})`} clipPath={`url(#${id.cloud})`} />
             <rect width="200" height="200" fill={`url(#${id.shine})`} clipPath={`url(#${id.cloud})`} />
 
-            {/* Eyebrows */}
+            {/* Eyebrows: raised when happy, slanted in when grumpy */}
             <g className="mascot-brows" fill="none" stroke="#0d4a2c" strokeWidth="7" strokeLinecap="round">
-              <path d="M66 86 Q78 77 90 82" />
-              <path d="M114 80 Q127 74 138 82" />
+              {mood === "sad" ? (
+                <>
+                  <path d="M64 80 L90 90" />
+                  <path d="M114 90 L140 80" />
+                </>
+              ) : mood === "happy" ? (
+                <>
+                  <path d="M66 80 Q78 70 90 76" />
+                  <path d="M114 74 Q127 68 138 76" />
+                </>
+              ) : (
+                <>
+                  <path d="M66 86 Q78 77 90 82" />
+                  <path d="M114 80 Q127 74 138 82" />
+                </>
+              )}
             </g>
 
-            {/* Eyes */}
-            <g className="mascot-eye">
-              <ellipse cx="80" cy="110" rx="15" ry="17" fill="#f4fff0" />
-              <circle cx="82" cy="109" r="12" fill={`url(#${id.iris})`} />
-              <circle cx="85" cy="104" r="4.5" fill="#ffffff" />
-              <circle cx="79" cy="113" r="2" fill="#ffffff" />
-            </g>
-            <g className="mascot-eye">
-              <ellipse cx="124" cy="108" rx="15" ry="17" fill="#f4fff0" />
-              <circle cx="126" cy="107" r="12" fill={`url(#${id.iris})`} />
-              <circle cx="129" cy="102" r="4.5" fill="#ffffff" />
-              <circle cx="123" cy="111" r="2" fill="#ffffff" />
-            </g>
+            {/* Eyes: squeezed-shut "^ ^" when happy */}
+            {mood === "happy" ? (
+              <g fill="none" stroke="#073020" strokeWidth="7" strokeLinecap="round">
+                <path d="M68 113 Q80 98 92 113" />
+                <path d="M112 111 Q124 96 136 111" />
+              </g>
+            ) : (
+              <>
+                <g className="mascot-eye">
+                  <ellipse cx="80" cy="110" rx="15" ry="17" fill="#f4fff0" />
+                  <circle cx="82" cy={mood === "sad" ? 113 : 109} r="12" fill={`url(#${id.iris})`} />
+                  <circle cx="85" cy={mood === "sad" ? 108 : 104} r="4.5" fill="#ffffff" />
+                  <circle cx="79" cy={mood === "sad" ? 117 : 113} r="2" fill="#ffffff" />
+                </g>
+                <g className="mascot-eye">
+                  <ellipse cx="124" cy="108" rx="15" ry="17" fill="#f4fff0" />
+                  <circle cx="126" cy={mood === "sad" ? 111 : 107} r="12" fill={`url(#${id.iris})`} />
+                  <circle cx="129" cy={mood === "sad" ? 106 : 102} r="4.5" fill="#ffffff" />
+                  <circle cx="123" cy={mood === "sad" ? 115 : 111} r="2" fill="#ffffff" />
+                </g>
+              </>
+            )}
 
-            {/* Blush */}
-            <g stroke="#ffffff" strokeOpacity="0.4" strokeWidth="4" strokeLinecap="round">
+            {/* Blush: turns red when grumpy */}
+            <g
+              stroke={mood === "sad" ? "#ff6b6b" : "#ffffff"}
+              strokeOpacity={mood === "sad" ? 0.75 : 0.4}
+              strokeWidth="4"
+              strokeLinecap="round"
+            >
               <path d="M58 136 L61 129" />
               <path d="M65 137 L68 130" />
               <path d="M138 133 L141 126" />
               <path d="M145 134 L148 127" />
             </g>
 
-            {/* Mouth */}
-            <g className="mascot-mouth">
-              <path d="M84 128 Q102 132 120 126 Q117 152 102 152 Q87 152 84 128 Z" fill="#073020" />
-              <ellipse cx="102" cy="153" rx="13" ry="10" fill="#7ee83a" clipPath={`url(#${id.mouth})`} />
-            </g>
+            {/* Mouth: open smile, big grin, or a frown */}
+            {mood === "sad" ? (
+              <path d="M86 147 Q102 131 118 147" fill="none" stroke="#073020" strokeWidth="7" strokeLinecap="round" />
+            ) : (
+              <g className="mascot-mouth">
+                <path d={mouthPath} fill="#073020" />
+                <ellipse cx="102" cy={mood === "happy" ? 158 : 153} rx={mood === "happy" ? 16 : 13} ry="10" fill="#7ee83a" clipPath={`url(#${id.mouth})`} />
+              </g>
+            )}
           </g>
         </g>
       </g>

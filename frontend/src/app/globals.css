@@ -125,6 +125,16 @@ body {
   border-color: var(--border-strong);
 }
 
+/* Amber "Try again" button */
+.btn-warning {
+  --btn-edge: #c9930e;
+  background: #f8c21c;
+  color: #2a1f00;
+}
+.btn-warning:hover {
+  background: #f5b800;
+}
+
 /* Smaller press depth for navbar buttons */
 .btn-sm {
   --press: 3px;
@@ -325,6 +335,101 @@ body {
   100% { transform: scale(1, 1); }
 }
 
+/* Mascot reactions (see `mood` on <Mascot>): one-off, replace the idle loop */
+.mascot--happy .mascot-hop {
+  animation: mascot-celebrate 0.95s cubic-bezier(0.3, 0.7, 0.4, 1) 2;
+}
+.mascot--happy .mascot-squash {
+  animation: mascot-celebrate-squash 0.95s ease-in-out 2;
+}
+.mascot--happy .mascot-sway {
+  animation: mascot-celebrate-spin 0.95s ease-in-out 2;
+}
+.mascot--happy .mascot-brows,
+.mascot--sad .mascot-brows,
+.mascot--sad .mascot-squash,
+.mascot--sad .mascot-sway {
+  animation: none;
+}
+.mascot--sad .mascot-hop {
+  animation: mascot-grumble 0.55s ease-in-out 2;
+}
+.mascot--sad .mascot-squash {
+  transform: scale(1.04, 0.95); /* slumped */
+}
+
+@keyframes mascot-celebrate {
+  0% { transform: translateY(0); }
+  35% { transform: translateY(-46px); }
+  58% { transform: translateY(0); }
+  74% { transform: translateY(-16px); }
+  88%, 100% { transform: translateY(0); }
+}
+@keyframes mascot-celebrate-squash {
+  0% { transform: scale(1, 1); }
+  10% { transform: scale(1.14, 0.84); }
+  24% { transform: scale(0.9, 1.12); }
+  40% { transform: scale(1, 1); }
+  58% { transform: scale(1.14, 0.85); }
+  68% { transform: scale(1, 1); }
+  88% { transform: scale(1.06, 0.94); }
+  100% { transform: scale(1, 1); }
+}
+@keyframes mascot-celebrate-spin {
+  0%, 18% { transform: rotate(0deg); }
+  50%, 100% { transform: rotate(360deg); }
+}
+@keyframes mascot-grumble {
+  0%, 100% { transform: translate(0, 3px); }
+  20% { transform: translate(-7px, 3px) rotate(-6deg); }
+  40% { transform: translate(7px, 3px) rotate(6deg); }
+  60% { transform: translate(-5px, 3px) rotate(-4deg); }
+  80% { transform: translate(4px, 3px) rotate(3deg); }
+}
+
+/* Lesson player bits */
+.question-in {
+  animation: question-in 0.32s ease-out both;
+}
+.bubble-in {
+  transform-origin: 0% 100%;
+  animation: bubble-in 0.3s cubic-bezier(0.2, 0.9, 0.3, 1.3) both;
+}
+.badge-pop {
+  animation: otp-pop 0.25s ease-out both;
+}
+.xp-bump {
+  animation: xp-bump 0.4s ease-out;
+}
+.confetti {
+  position: absolute;
+  left: 50%;
+  top: 45%;
+  width: 8px;
+  height: 12px;
+  border-radius: 2px;
+  opacity: 0;
+  animation: confetti 0.9s cubic-bezier(0.2, 0.8, 0.3, 1) forwards;
+}
+
+@keyframes question-in {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: none; }
+}
+@keyframes bubble-in {
+  from { opacity: 0; transform: scale(0.6) translateY(8px); }
+  to { opacity: 1; transform: none; }
+}
+@keyframes xp-bump {
+  0% { transform: scale(1); }
+  40% { transform: scale(1.25); color: var(--primary); }
+  100% { transform: scale(1); }
+}
+@keyframes confetti {
+  0% { opacity: 1; transform: translate(-50%, -50%) rotate(0deg); }
+  100% { opacity: 0; transform: translate(calc(-50% + var(--dx)), calc(-50% + var(--dy))) rotate(var(--rot)); }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .mascot-hop,
   .mascot-squash,
@@ -332,7 +437,12 @@ body {
   .mascot-brows,
   .mascot-eye,
   .mascot-mouth,
-  .otp-box {
+  .otp-box,
+  .question-in,
+  .bubble-in,
+  .badge-pop,
+  .xp-bump,
+  .confetti {
     animation: none;
   }
 }
