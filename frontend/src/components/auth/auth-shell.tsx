@@ -16,8 +16,8 @@ export function AuthShell({ title, subtitle, footer, compact = false, children }
       <div className="w-full max-w-[540px]">
         <Mascot className={`pointer-events-none mx-auto mb-3 block select-none ${compact ? "size-14" : "size-16"}`} />
 
-        <h1 className="text-center font-headline text-4xl leading-none tracking-[-0.02em] sm:text-[2.5rem]">{title}</h1>
-        {subtitle && <p className="mt-1.5 text-center text-muted">{subtitle}</p>}
+        <h1 className="text-center font-headline text-3xl leading-none tracking-[-0.02em] sm:text-[2.5rem]">{title}</h1>
+        {subtitle && <p className="mt-1.5 text-center text-sm text-muted sm:text-base">{subtitle}</p>}
 
         {children}
 

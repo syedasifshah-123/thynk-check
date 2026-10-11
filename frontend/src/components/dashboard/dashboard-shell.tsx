@@ -7,16 +7,30 @@ import { Mascot } from "@/components/mascot";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { toast } from "@/components/toast/toast-store";
 import { logOut, type Session } from "@/lib/fake-auth";
+import { streakDays, type Progress } from "@/lib/progress";
 import { LEARN_ITEMS, YOU_ICON, YOU_ITEMS, type NavItem } from "./nav-items";
 
 // App layout for logged-in pages:
 // - desktop (lg+): floating sidebar
-// - mobile: slim top bar + floating bottom nav; the "You" tab opens a bottom sheet
-export function DashboardShell({ session, active, children }: { session: Session; active: string; children: React.ReactNode }) {
+// - mobile: slim top bar (logo + streak + XP) + floating bottom nav; the "You" tab opens a bottom sheet
+export function DashboardShell({
+  session,
+  progress,
+  active,
+  children,
+}: {
+  session: Session;
+  progress: Progress;
+  active: string;
+  children: React.ReactNode;
+}) {
   const [youOpen, setYouOpen] = useState(false);
+  const streak = streakDays(progress);
+  const xp = Object.values(progress).reduce((sum, r) => sum + r.bestXp, 0);
 
   return (
-    <div className="flex min-h-dvh flex-1">
+    // Solid background: covers the page-wide grid pattern, which is only for landing/auth pages.
+    <div className="flex min-h-dvh flex-1 bg-background">
       {/* Desktop sidebar: floats 12px in from the edges */}
       <aside className="fixed bottom-3 left-3 top-3 z-30 hidden w-[272px] flex-col rounded-[28px] border-2 border-border bg-surface shadow-[0_4px_0_var(--border)] lg:flex">
         <div className="flex h-20 shrink-0 items-center px-6">
@@ -45,11 +59,16 @@ export function DashboardShell({ session, active, children }: { session: Session
 
       <div className="flex min-w-0 flex-1 flex-col pb-28 lg:pb-0 lg:pl-[296px]">
         {/* Mobile top bar */}
-        <header className="sticky top-0 z-20 flex h-16 items-center justify-between border-b-2 border-border bg-background/85 px-4 backdrop-blur lg:hidden">
+        <header className="sticky top-0 z-20 flex h-14 items-center justify-between border-b-2 border-border bg-background/85 px-4 backdrop-blur lg:hidden">
           <Logo />
-          <button type="button" onClick={() => setYouOpen(true)} aria-label="Open your menu" className="rounded-full">
-            <Avatar name={session.name} />
-          </button>
+          <div className="flex items-center gap-2">
+            <StatChip label={`${streak} day streak`} value={streak} tone="text-orange-500">
+              <path d="M12 22a7 7 0 0 0 7-7c0-4-3-6.5-4-10-2.5 1.5-3.5 4-3.5 6-1-.5-2-2-2-3.5C6.5 9.5 5 12 5 15a7 7 0 0 0 7 7z" />
+            </StatChip>
+            <StatChip label={`${xp} XP`} value={xp} tone="text-primary">
+              <path d="M12 2l2.2 6.8L21 11l-6.8 2.2L12 20l-2.2-6.8L3 11l6.8-2.2z" />
+            </StatChip>
+          </div>
         </header>
 
         {children}
@@ -62,6 +81,20 @@ export function DashboardShell({ session, active, children }: { session: Session
 }
 
 /* ───────────────────────── Mobile ───────────────────────── */
+
+function StatChip({ label, value, tone, children }: { label: string; value: number; tone: string; children: React.ReactNode }) {
+  return (
+    <span
+      aria-label={label}
+      className="flex h-9 items-center gap-1.5 rounded-full border-2 border-border bg-surface px-3 font-cofo text-sm font-bold tabular-nums shadow-[0_2px_0_var(--border)]"
+    >
+      <svg className={`size-4 ${tone}`} viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+        {children}
+      </svg>
+      {value}
+    </span>
+  );
+}
 
 function BottomNav({ active, youOpen, onYou }: { active: string; youOpen: boolean; onYou: () => void }) {
   return (

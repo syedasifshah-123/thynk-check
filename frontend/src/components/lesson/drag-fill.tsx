@@ -1,8 +1,8 @@
 "use client";
 
 import { useEffect, useEffectEvent, useRef, useState } from "react";
-import { playTick } from "@/lib/sounds";
-import type { FillQuestion } from "./lessons";
+import { playDrop, playPickup, playReturn } from "@/lib/sounds";
+import type { FillQuestion } from "./types";
 
 export type SlotMark = "right" | "wrong" | null;
 
@@ -53,7 +53,8 @@ export function DragFill({ question, slots, onChange, marks, locked }: DragFillP
       if (occupant !== null && from !== null) next[from] = occupant;
     }
     onChange(next);
-    playTick();
+    if (to === null) playReturn();
+    else playDrop();
   }
 
   function startDrag(event: React.PointerEvent<HTMLElement>, tile: number, from: number | null) {
@@ -79,6 +80,7 @@ export function DragFill({ question, slots, onChange, marks, locked }: DragFillP
     const current = dragRef.current;
     if (!current) return;
     const moved = current.moved || Math.hypot(e.clientX - current.startX, e.clientY - current.startY) > DRAG_THRESHOLD;
+    if (moved && !current.moved) playPickup(); // the moment a tap turns into a drag
     const next = { ...current, x: e.clientX, y: e.clientY, moved, overSlot: moved ? slotAt(e.clientX, e.clientY) : null };
     dragRef.current = next;
     setDrag(next);
@@ -123,11 +125,11 @@ export function DragFill({ question, slots, onChange, marks, locked }: DragFillP
   const isDragging = (tile: number) => drag?.moved && drag.tile === tile;
 
   return (
-    <div className="flex flex-col items-center gap-8">
+    <div className="flex flex-col items-center gap-6 sm:gap-8">
       {/* Equation */}
-      <div className="w-full rounded-2xl border-2 border-border bg-surface px-3 py-6 sm:px-6">
+      <div className="w-full rounded-2xl border-2 border-border bg-surface px-3 py-4 shadow-[0_3px_0_var(--border)] sm:px-6 sm:py-6">
         {question.lines.map((line, i) => (
-          <div key={i} className="flex flex-wrap items-center justify-center gap-x-1.5 gap-y-2 py-1.5 font-cofo text-2xl font-medium sm:text-[1.75rem]">
+          <div key={i} className="flex flex-wrap items-center justify-center gap-x-1.5 gap-y-2 py-1.5 font-cofo text-lg font-medium sm:text-[1.75rem]">
             {line.map((token, j) => {
               if (typeof token === "object") {
                 const placed = slots[token.slot];
@@ -136,13 +138,13 @@ export function DragFill({ question, slots, onChange, marks, locked }: DragFillP
                   <span
                     key={j}
                     data-slot={token.slot}
-                    className={`grid h-12 min-w-12 place-items-center rounded-xl border-2 transition-colors ${
+                    className={`grid h-11 min-w-11 place-items-center rounded-xl border-2 transition-colors sm:h-12 sm:min-w-12 ${
                       mark === "right"
                         ? "border-primary bg-primary/10"
                         : mark === "wrong"
                           ? "border-amber-400 bg-amber-400/10"
                           : drag?.overSlot === token.slot
-                            ? "border-sky-500 bg-sky-500/10"
+                            ? "border-[var(--accent)] bg-[color-mix(in_srgb,var(--accent)_12%,transparent)]"
                             : placed === null
                               ? "border-dashed border-border-strong"
                               : "border-transparent"
@@ -165,12 +167,16 @@ export function DragFill({ question, slots, onChange, marks, locked }: DragFillP
                 return (
                   <span key={j} className="inline-flex items-center gap-0.5">
                     {term[1]}
-                    <span className="rounded-md bg-sky-500/15 px-1.5 text-sky-700 dark:text-sky-300">{term[2]}</span>
+                    <span className="rounded-md bg-[color-mix(in_srgb,var(--accent)_16%,transparent)] px-1.5 text-[var(--accent)]">{term[2]}</span>
                   </span>
                 );
               }
+              const word = /^[a-z]{3,}$/i.test(token);
               return (
-                <span key={j} className={token === "(" || token === ")" ? "text-[1.15em] font-normal text-muted" : ""}>
+                <span
+                  key={j}
+                  className={token === "(" || token === ")" ? "text-[1.15em] font-normal text-muted" : word ? "text-sm text-muted sm:text-lg" : ""}
+                >
                   {token}
                 </span>
               );
@@ -184,7 +190,7 @@ export function DragFill({ question, slots, onChange, marks, locked }: DragFillP
         {question.tiles.map((label, tile) => {
           const used = slots.includes(tile) || isDragging(tile);
           return used ? (
-            <span key={tile} className="h-12 min-w-12 rounded-xl border-2 border-dashed border-border" aria-hidden="true" />
+            <span key={tile} className="h-11 min-w-11 rounded-xl border-2 border-dashed border-border sm:h-12 sm:min-w-12" aria-hidden="true" />
           ) : (
             <Tile key={tile} label={label} locked={locked} onPointerDown={(e) => startDrag(e, tile, null)} />
           );
@@ -219,7 +225,7 @@ function Tile({
       type="button"
       disabled={locked}
       onPointerDown={onPointerDown}
-      className={`grid h-12 min-w-12 touch-none select-none place-items-center rounded-xl border-2 bg-surface px-3 font-cofo text-xl font-bold transition-transform ${
+      className={`grid h-11 min-w-11 touch-none select-none place-items-center rounded-xl border-2 bg-surface px-3 font-cofo text-lg font-bold transition-transform sm:h-12 sm:min-w-12 sm:text-xl ${
         tone === "right"
           ? "border-primary text-primary"
           : tone === "wrong"

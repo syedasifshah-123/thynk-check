@@ -14,7 +14,7 @@ export type NavItem = {
 export const LEARN_ITEMS: NavItem[] = [
   { id: "home", label: "Home", href: "/home", icon: <HomeIcon /> },
   { id: "brain", label: "Brain Training", short: "Brain", icon: <BrainIcon /> },
-  { id: "math", label: "Math", badge: "New", icon: <MathIcon /> },
+  { id: "math", label: "Math", href: "/math", badge: "New", icon: <MathIcon /> },
   { id: "games", label: "Games", icon: <GamesIcon /> },
   { id: "iq", label: "IQ Test", icon: <BulbIcon /> },
 ];
